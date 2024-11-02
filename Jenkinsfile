@@ -1,39 +1,29 @@
 pipeline {
-    agent { label "dev-server"}
-    
+    agent {label 'runner_01'}
+
     stages {
-        
-        stage("code"){
-            steps{
-                git url: "https://github.com/LondheShubham153/node-todo-cicd.git", branch: "master"
-                echo 'bhaiyya code clone ho gaya'
+        stage('Checkout') {
+            steps {
+               git branch: 'master', url: 'https://github.com/joakim077/node-todo-cicd.git'
             }
         }
-        stage("build and test"){
-            steps{
-                sh "docker build -t node-app-test-new ."
-                echo 'code build bhi ho gaya'
+        stage('build') {
+            steps {
+               sh 'docker build -t node-todo-app .'
             }
         }
-        stage("scan image"){
-            steps{
-                echo 'image scanning ho gayi'
-            }
-        }
-        stage("push"){
-            steps{
-                withCredentials([usernamePassword(credentialsId:"dockerHub",passwordVariable:"dockerHubPass",usernameVariable:"dockerHubUser")]){
-                sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPass}"
-                sh "docker tag node-app-test-new:latest ${env.dockerHubUser}/node-app-test-new:latest"
-                sh "docker push ${env.dockerHubUser}/node-app-test-new:latest"
-                echo 'image push ho gaya'
+        stage('Push image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-cred', passwordVariable: 'PASSWD', usernameVariable: 'USERNAME')]) {
+                    sh "docker tag node-todo-app ${USERNAME}/node-todo-app"
+                    sh "docker login -u ${USERNAME} -p${env.PASSWD} "
+                    sh "docker push ${USERNAME}/node-todo-app "
                 }
             }
         }
-        stage("deploy"){
-            steps{
-                sh "docker-compose down && docker-compose up -d"
-                echo 'deployment ho gayi'
+        stage('Deploy') {
+            steps {
+                sh 'docker compose up -d '
             }
         }
     }
